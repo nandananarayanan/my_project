@@ -68,8 +68,10 @@
                 <div class="card-body">
                     {% if preferred_teachers %}
                         <ul class="list-group">
-                            {% for teacher in preferred_teachers %}
-                                <li class="list-group-item">{{ teacher.name }}</li>
+                            {% for preference in preferred_teachers %}
+                                <li class="list-group-item">
+                                    {{ preference.teacher.user.get_full_name }} <!-- Correct way to get teacher's full name -->
+                                </li>
                             {% endfor %}
                         </ul>
                     {% else %}

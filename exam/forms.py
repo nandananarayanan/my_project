@@ -130,19 +130,16 @@ class TimetableForm(forms.ModelForm):
         }
 
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
-from .models import Teacher, Department, User  # Make sure you import your models
+from .models import Teacher, Department
 import re
 
 
+# Validator for phone numbers
 def validate_phone(value):
     if not re.match(r'^\d{10}$', value):
         raise forms.ValidationError('Invalid phone number. Please enter a 10-digit number.')
 
-from django.contrib.auth.models import User, Group
-from django import forms
-from .models import Teacher, Department  # Assuming Teacher and Department models exist
 
 class TeacherForm(forms.ModelForm):
     first_name = forms.CharField(
@@ -162,7 +159,7 @@ class TeacherForm(forms.ModelForm):
     phone_num = forms.CharField(
         max_length=10,
         required=True,
-        validators=[validate_phone],  # Assuming validate_phone is defined somewhere
+        validators=[validate_phone],
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter 10-digit Phone Number'})
     )
     designation = forms.ChoiceField(
@@ -202,42 +199,49 @@ class TeacherForm(forms.ModelForm):
         fields = ['first_name', 'last_name', 'email', 'username', 'password', 'dept', 'designation', 'role', 'phone_num', 'gender']
 
     def save(self, commit=True):
-        # Save the user object
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])  # Hash the password before saving
+        
+        if self.instance.pk:  # If updating an existing user
+            user = User.objects.get(pk=self.instance.pk)
+
+        user.set_password(self.cleaned_data['password'])  # Hash the password
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
         
         if commit:
-            user.save()  # Save the user
+            user.save()
 
-            # Now save the teacher model
-            teacher = Teacher.objects.create(
-                user=user,
-                phone_num=self.cleaned_data['phone_num'],
-                designation=self.cleaned_data['designation'],
-                gender=self.cleaned_data['gender'],
-                dept=self.cleaned_data['dept'],
-                role=self.cleaned_data['role'],
-            )
+            # Get or create Teacher instance
+            teacher, created = Teacher.objects.get_or_create(user=user)
+            teacher.phone_num = self.cleaned_data['phone_num']
+            teacher.designation = self.cleaned_data['designation']
+            teacher.gender = self.cleaned_data['gender']
+            teacher.dept = self.cleaned_data['dept']
+            teacher.role = self.cleaned_data['role']
+            teacher.save()
 
-            # Add to the appropriate group based on role
+            # Update Group
             role = self.cleaned_data['role']
             if role == 'Examination Chief':
                 group = Group.objects.get(name='Examination Chief')
                 user.is_staff = True
             else:
                 group = Group.objects.get(name='Teacher')
-            
+
+            user.groups.clear()  # Remove previous group
             user.groups.add(group)
             user.save()
 
-        return user
+        return user  # ✅ Correctly placed inside the method
 
 
 
 class DutyAllotmentForm(forms.ModelForm):
+    teacher = forms.ModelChoiceField(
+        queryset=Teacher.objects.none(),  # Set dynamically in __init__
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
     room = forms.ModelChoiceField(
         queryset=Room.objects.all(),  # Fetch all available rooms
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -253,18 +257,26 @@ class DutyAllotmentForm(forms.ModelForm):
         }
 
 
+
 from django import forms
-from .models import DutyPreference
+from .models import DutyPreference, Timetable
 
 class DutyPreferenceForm(forms.ModelForm):
+    pref_date = forms.ChoiceField(choices=[], label="Preferred Date", widget=forms.Select(attrs={'class': 'form-control'}))
+
     class Meta:
         model = DutyPreference
         fields = ['teacher', 'pref_date']
         widgets = {
             'teacher': forms.Select(attrs={'class': 'form-control'}),
-            'pref_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
         labels = {
             'teacher': 'Teacher',
             'pref_date': 'Preferred Date',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Fetching unique examination dates from Timetable model
+        exam_dates = Timetable.objects.values_list('date', flat=True).distinct()
+        self.fields['pref_date'].choices = [(date, date) for date in exam_dates]
