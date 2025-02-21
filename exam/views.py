@@ -383,32 +383,39 @@ from django.utils.dateparse import parse_date  # Import to handle date parsing
 @login_required()
 @user_passes_test(chief_group_required)
 def add_duty(request):
-    selected_date = request.GET.get('date', datetime.today().strftime('%Y-%m-%d'))
-    formatted_date = parse_date(selected_date)  # Correct way to parse date
+    # Get the selected date from the request or default to today
+    selected_date = request.GET.get('date')  
+    if selected_date:
+        formatted_date = parse_date(selected_date)  # Convert string to date object
+    else:
+        formatted_date = datetime.today().date()  # Default to today's date if not provided
+
     if not formatted_date:
         messages.error(request, "Invalid date format.")
-    return redirect('add_duty')
+        return redirect('add_duty')
 
     # Fetch teachers who prefer this date
-    preferred_teachers = DutyPreference.objects.filter(pref_date=formatted_date).select_related('teacher')
+    preferred_teachers = Teacher.objects.filter(
+        duty_preference__pref_date=formatted_date
+    ).distinct()
 
     if request.method == 'POST':
         form = DutyAllotmentForm(request.POST)
         if form.is_valid():
-            duty = form.save(commit=False)  # Don't save yet
-            duty.date = formatted_date  # Ensure correct date format
-            duty.save()  # Now save
+            duty = form.save(commit=False)
+            duty.date = formatted_date  # Ensure correct date is saved
+            duty.save()
             messages.success(request, "Duty allotted successfully!")
-            return redirect('duty_list')  
+            return redirect('duty_list')  # Redirect to duty list after saving
         else:
             messages.error(request, "Form is invalid. Please check the entered data.")
-
     else:
-        form = DutyAllotmentForm()
+        # Initialize form with the correct date
+        form = DutyAllotmentForm(initial={'date': formatted_date})
 
     return render(request, 'add_duty.html', {
         'form': form,
-        'selected_date': selected_date,
+        'selected_date': formatted_date.strftime('%Y-%m-%d'),  # Convert to string for display
         'preferred_teachers': preferred_teachers,
     })
 

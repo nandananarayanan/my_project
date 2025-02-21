@@ -28,9 +28,11 @@
                     <td style="text-align: center;">{{ duty.teacher.user.first_name }} {{ duty.teacher.user.last_name }}</td>
                     <td style="text-align: center;">{{ duty.room.room_no }}</td>
                     <td style="text-align: center;">{{ duty.hours }}</td>
-                    <td style="text-align: center;">
-                        <a href="{% url 'edit_duty' duty.pk %}" class="btn btn-sm btn-outline-warning me-1">Edit</a>
-                        <a href="{% url 'delete_duty' duty.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                    <td class="text-center" >
+                        <div class="d-flex justify-content center gap-2">
+                            <a href="{% url 'edit_duty' duty.pk %}" class="btn btn-sm btn-outline-warning me-1">Edit</a>
+                            <a href="{% url 'delete_duty' duty.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </div>    
                     </td>
                 </tr>
                 {% empty %}

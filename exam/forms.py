@@ -239,11 +239,12 @@ class TeacherForm(forms.ModelForm):
 
 class DutyAllotmentForm(forms.ModelForm):
     teacher = forms.ModelChoiceField(
-        queryset=Teacher.objects.none(),  # Set dynamically in __init__
-        widget=forms.Select(attrs={'class': 'form-control'})
+        queryset=Teacher.objects.all(),  # Show all teachers
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label="Select a Teacher"
     )
     room = forms.ModelChoiceField(
-        queryset=Room.objects.all(),  # Fetch all available rooms
+        queryset=Room.objects.all(),
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
@@ -251,7 +252,6 @@ class DutyAllotmentForm(forms.ModelForm):
         model = DutyAllotment
         fields = ['teacher', 'date', 'room', 'hours']
         widgets = {
-            'teacher': forms.Select(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'hours': forms.NumberInput(attrs={'class': 'form-control'}),
         }
