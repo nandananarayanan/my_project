@@ -103,11 +103,12 @@ class Teacher(models.Model):
 
 # Duty Preference Model
 class DutyPreference(models.Model):
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="duty_preferences")
     pref_date = models.DateField()
 
     def __str__(self):
         return f"Preference of {self.teacher.user.username} on {self.pref_date}"
+
 
 # Duty Allotment Model
 class DutyAllotment(models.Model):
