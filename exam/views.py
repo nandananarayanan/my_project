@@ -380,25 +380,35 @@ def duty_list(request):
     return render(request, 'duty_list.html', {'duties': duties, 'selected_date': formatted_date})
 
 
+from django.utils.dateparse import parse_date
+from datetime import datetime
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Teacher, DutyAllotment
+from .forms import DutyAllotmentForm
+
 @login_required()
 @user_passes_test(chief_group_required)
 def add_duty(request):
     selected_date = request.GET.get('date', None)
+    
+    # Debugging: Print selected_date to check if it's coming in correct format
+    print("Received date from URL:", selected_date)  
+
     if not selected_date:
         messages.error(request, "No date provided. Please select a valid date.")
-        return redirect('manage_duty') 
-    formatted_date = None
+        return redirect('duty_allotment')
 
-    if selected_date:
-        formatted_date = parse_date(selected_date)  # Try parsing YYYY-MM-DD format
-        if not formatted_date:
-            try:
-                formatted_date = datetime.strptime(selected_date, "%b. %d, %Y").date()  # Try 'Feb. 19, 2025' format
-            except ValueError:
-                formatted_date = None
+    # Try parsing YYYY-MM-DD format
+    formatted_date = parse_date(selected_date)
 
     if not formatted_date:
-        formatted_date = datetime.today().date()  # Default to today if no valid date
+        messages.error(request, f"Invalid date format received: {selected_date}")
+        return redirect('duty_allotment')
+
+    # Debugging: Print formatted date
+    print("Parsed date:", formatted_date)
 
     # Fetch teachers who prefer this date
     preferred_teachers = Teacher.objects.filter(duty_preferences__pref_date=formatted_date).distinct()
@@ -410,7 +420,7 @@ def add_duty(request):
             duty.date = formatted_date  # Ensure correct date is saved
             duty.save()
             messages.success(request, "Duty allotted successfully!")
-            return redirect('duty_list')  # Redirect to duty list
+            return redirect('duty_allotment')
         else:
             messages.error(request, "Form is invalid. Please check the entered data.")
     else:
@@ -419,9 +429,10 @@ def add_duty(request):
 
     return render(request, 'add_duty.html', {
         'form': form,
-        'selected_date': formatted_date.strftime('%Y-%m-%d'),  # Convert to YYYY-MM-DD for display
+        'selected_date': formatted_date.strftime('%Y-%m-%d'),
         'preferred_teachers': preferred_teachers,
     })
+
 
     
 @login_required()

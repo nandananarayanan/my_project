@@ -21,7 +21,9 @@
                 <td style="text-align: center;">{{ exam.date }}</td>
                 <td style="text-align: center;">{{ duty_counts|get_item:exam.date }}</td>
                 <td style="text-align: center;">
-                    <a href="{% url 'duty_list' %}?date={{ exam.date }}" class="btn btn-sm btn-primary" style="width: 120px;">Manage Duties</a>
+                    <a href="{% url 'add_duty' %}?date={{ exam.date|date:'Y-m-d' }}" class="btn btn-sm btn-primary" style="width: 120px;">Manage Duties</a>
+
+
                 </td>
             </tr>
             {% endfor %}
