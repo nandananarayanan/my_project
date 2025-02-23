@@ -6,6 +6,8 @@ from .models import Programme, Room, Course, Exam, Timetable, Teacher, DutyAllot
 from .forms import ProgramForm, RoomForm, CourseForm, ExamForm, TimetableForm, TeacherForm, DutyAllotmentForm, DutyPreferenceForm
 from datetime import datetime
 from django.utils.dateparse import parse_date  # Import parse_date
+from django.urls import reverse
+
 
 
 
@@ -198,6 +200,7 @@ def delete_course(request, pk):
         course.delete()
         return redirect('course_list')
     return render(request, 'delete_course.html', {'course': course})
+from django.urls import reverse
 
 
 @login_required()
@@ -420,7 +423,8 @@ def add_duty(request):
             duty.date = formatted_date  # Ensure correct date is saved
             duty.save()
             messages.success(request, "Duty allotted successfully!")
-            return redirect('duty_allotment')
+            return redirect(reverse('duty_list') + f"?date={selected_date}")
+
         else:
             messages.error(request, "Form is invalid. Please check the entered data.")
     else:
@@ -451,10 +455,16 @@ def edit_duty(request, pk):
 @login_required()
 @user_passes_test(chief_group_required)
 def delete_duty(request, pk):
-    duty = get_object_or_404(DutyAllotment, pk=pk)
+    duty = get_object_or_404(DutyAllotment, pk=pk)  # Get the duty object or return 404
+    selected_date = duty.date.strftime("%Y-%m-%d")  # Convert date to 'YYYY-MM-DD' format
+
     if request.method == 'POST':
         duty.delete()
-        return redirect('duty_list')
+        messages.success(request, "Duty deleted successfully!")
+
+        # Redirect back to duty list with the selected date
+        return redirect(f"{reverse('duty_list')}?date={selected_date}")
+
     return render(request, 'delete_duty.html', {'duty': duty})
 
 @login_required()
