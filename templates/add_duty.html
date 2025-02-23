@@ -28,6 +28,7 @@
         }
     </style>
 </head>
+
 <div class="container mt-4">
     <h3 class="text-center">Allot Duty for {{ selected_date }}</h3>
 
@@ -37,9 +38,21 @@
                 <div class="card-header bg-navy text-white">
                     <h5 class="mb-0">Allot New Duty</h5>
                 </div>
+                
                 <div class="card-body">
+                    <!-- Display form validation errors -->
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Form submission failed!</strong> Please check the errors below.
+                        </div>
+                    {% endif %}
+
                     <form method="post">
                         {% csrf_token %}
+
+                        <!-- Ensure date is sent correctly -->
+                        <input type="hidden" name="date" value="{{ selected_date }}">
+
                         <div class="mb-3">
                             <label for="id_teacher" class="form-label">Teacher</label>
                             {{ form.teacher }}
@@ -53,8 +66,9 @@
                             {{ form.hours }}
                         </div>
                         <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'duty_list' %}?date={{ selected_date }}" class="btn btn-secondary">Back</a> 
                             <button type="submit" class="btn btn-success">Save</button>
-                            <a href="{% url 'duty_list' %}" class="btn btn-secondary">Cancel</a>
+                            <a href="{% url 'duty_allotment' %}" class="btn btn-danger">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -68,11 +82,12 @@
                 <div class="card-body">
                     {% if preferred_teachers %}
                         <ul class="list-group">
-                            {% for preference in preferred_teachers %}
+                            {% for teacher in preferred_teachers %}
                                 <li class="list-group-item">
-                                    {{ preference.teacher.user.first_name }} {{ preference.teacher.user.last_name }}<!-- Correct way to get teacher's full name -->
+                                    {{ teacher.user.get_full_name }}  {# Access teacher's username correctly #}
                                 </li>
                             {% endfor %}
+
                         </ul>
                     {% else %}
                         <p class="text-muted">No teachers have selected this date as preferred.</p>
