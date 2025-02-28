@@ -57,12 +57,18 @@ class RoomForm(forms.ModelForm):
 
 
 class CourseForm(forms.ModelForm):
+    dept_name = forms.CharField(
+        label="Department Name",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'})
+    )
+
     class Meta:
         model = Course
         fields = [
             'course_code', 
             'course_title', 
-            'pgm', 
+            'dept_id',  
             'exam_duration', 
             'sem', 
             'syllabus_year'
@@ -70,7 +76,7 @@ class CourseForm(forms.ModelForm):
         widgets = {
             'course_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Course Code'}),
             'course_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Course Title'}),
-            'pgm': forms.Select(attrs={'class': 'form-control'}),
+            'dept_id': forms.Select(attrs={'class': 'form-control'}),  # Dropdown for Department
             'exam_duration': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter Exam Duration'}),
             'sem': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter Semester'}),
             'syllabus_year': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter Syllabus Year'}),
@@ -78,11 +84,16 @@ class CourseForm(forms.ModelForm):
         labels = {
             'course_code': 'Course Code',
             'course_title': 'Course Title',
-            'pgm': 'Programme',
+            'dept_id': 'Department',
             'exam_duration': 'Exam Duration',
-            'sem':'Semester',
-            'syllabus_year':'Syllabus Year',
+            'sem': 'Semester',
+            'syllabus_year': 'Syllabus Year',
         }
+
+    def __init__(self, *args, **kwargs):
+        super(CourseForm, self).__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['dept_name'].initial = self.instance.dept_id.dept_name  # Set read-only department name
 
 
 class ExamForm(forms.ModelForm):

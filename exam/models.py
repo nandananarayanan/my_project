@@ -29,13 +29,16 @@ class Course(models.Model):
     course_id = models.AutoField(primary_key=True)
     course_code = models.CharField(max_length=50)
     course_title = models.CharField(max_length=150)
-    pgm = models.ForeignKey(Programme, on_delete=models.CASCADE)
+    dept_id = models.ForeignKey(Department, on_delete=models.CASCADE)
     exam_duration = models.IntegerField()
     sem = models.IntegerField()
     syllabus_year = models.IntegerField()
 
     def __str__(self):
         return self.course_title
+    
+    def get_dept_name(self):  
+        return self.dept_id.dept_name
 
 # Exam Model
 class Exam(models.Model):

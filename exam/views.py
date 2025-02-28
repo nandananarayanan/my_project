@@ -164,8 +164,8 @@ def delete_room(request, pk):
 @login_required()
 @user_passes_test(chief_group_required)
 def course_list(request):
-    course = Course.objects.all()
-    return render(request, 'course_list.html', {'course': course})
+    courses = Course.objects.select_related('dept_id').all()
+    return render(request, 'course_list.html', {'courses': courses})
 
 @login_required()
 @user_passes_test(chief_group_required)
@@ -190,7 +190,7 @@ def edit_course(request, pk):
             return redirect('course_list')
     else:
         form = CourseForm(instance=course)
-    return render(request, 'add_course.html', {'form': form})
+    return render(request, 'edit_course.html', {'form': form, 'course': course})
 
 @login_required()
 @user_passes_test(chief_group_required)
@@ -200,6 +200,8 @@ def delete_course(request, pk):
         course.delete()
         return redirect('course_list')
     return render(request, 'delete_course.html', {'course': course})
+
+
 from django.urls import reverse
 
 
