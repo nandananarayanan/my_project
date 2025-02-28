@@ -471,7 +471,8 @@ def delete_duty(request, pk):
 
 @login_required()
 def preference_list(request):
-    preferences = DutyPreference.objects.all()
+    teacher=Teacher.objects.get(user=request.user)
+    preferences = DutyPreference.objects.filter(teacher=teacher)
     return render(request, 'preference_list.html', {'preferences': preferences})
 
 @login_required()

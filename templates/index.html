@@ -237,13 +237,13 @@
                             <h5 class="cards-title text-start">Duty Allotted Dates</h5>
                             <ul class="list-group text-start">
                                 {% if duty_allotted_dates %}
-                                    {% for duty in duty_allotted_dates %}
-                                        <li class="list-group-item">{{ duty.date }}</li>
+                                    {% for date in duty_allotted_dates %}
+                                        <li class="list-group-item">{{ date }}</li>
                                     {% endfor %}
                                 {% else %}
                                     <li class="list-group-item">No duty allotments</li>
                                 {% endif %}
-                            </ul>
+                            </ul>                            
                         </div>
                     </div>
                 </div>
