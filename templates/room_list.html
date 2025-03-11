@@ -16,8 +16,8 @@
             <tr>
                 <th scope="col" style="text-align: center;">SI.NO</th>
                 <th scope="col" style="text-align:center;">Room No</th>
-                <th scope="col" style="text-align: center;">No.of rows</th>
-                <th scope="col" style="text-align: center;">No.of Columns</th>
+                {% comment %} <th scope="col" style="text-align: center;">No.of rows</th>
+                <th scope="col" style="text-align: center;">No.of Columns</th> {% endcomment %}
                 <th scope="col" style="text-align: center;">Block No</th>
                 <th scope="col" style="text-align: center;">Actions</th>
             </tr>
@@ -27,11 +27,11 @@
         <tr>
             <td style="text-align:center;">{{ forloop.counter }}</td>
             <td style="text-align:center;">{{ room.room_no }}</td>
-            <td style="text-align: center;">{{ room.no_of_rows}}</td>
-            <td style="text-align: center;">{{ room.no_of_columns }}</td>
+            {% comment %} <td style="text-align: center;">{{ room.no_of_rows}}</td>
+            <td style="text-align: center;">{{ room.no_of_columns }}</td> {% endcomment %}
             <td style="text-align: center;">{{ room.block_no}}</td>
             <td class="text-center" >
-                <div class="d-flex justify-content center gap-2">
+                <div class="d-flex justify-content-center gap-2">
                     <a href="{% url 'edit_room' room.pk %}" class="btn btn-sm btn-outline-warning" style="width: 60px; height: 35px;">Edit</a>
                     <a href="{% url 'delete_room' room.pk %}" class="btn btn-sm btn-outline-danger" style="width: 60px; height: 35px;">Delete</a>
                 </div>
