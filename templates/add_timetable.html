@@ -42,6 +42,11 @@
                         <div class="mb-3">
                             <label for="id_date" class="form-label">Date</label>
                             {{ form.date }}
+                            
+                            <!-- Display error/warning for the 'date' field -->
+                            {% for error in form.date.errors %}
+                                <div class="alert alert-warning mt-2">{{ error }}</div>
+                            {% endfor %}
                         </div>
 
                         <div class="mb-3">
@@ -66,4 +71,3 @@
 </html>
 
 {% endblock %}
-

@@ -399,7 +399,7 @@ def add_duty(request):
     selected_date = request.GET.get('date', None)
     
     # Debugging: Print selected_date to check if it's coming in correct format
-    print("Received date from URL:", selected_date)  
+    print("Received date from URL:", selected_date)
 
     if not selected_date:
         messages.error(request, "No date provided. Please select a valid date.")
@@ -418,6 +418,10 @@ def add_duty(request):
     # Fetch teachers who prefer this date
     preferred_teachers = Teacher.objects.filter(duty_preferences__pref_date=formatted_date).distinct()
 
+    # Add duty count for each teacher
+    for teacher in preferred_teachers:
+        teacher.duty_counts = DutyAllotment.objects.filter(teacher=teacher, date=formatted_date).count()
+
     if request.method == 'POST':
         form = DutyAllotmentForm(request.POST)
         if form.is_valid():
@@ -426,7 +430,6 @@ def add_duty(request):
             duty.save()
             messages.success(request, "Duty allotted successfully!")
             return redirect(reverse('duty_list') + f"?date={selected_date}")
-
         else:
             messages.error(request, "Form is invalid. Please check the entered data.")
     else:
@@ -478,14 +481,19 @@ def preference_list(request):
 @login_required()
 @user_passes_test(teacher_group_required)
 def add_preference(request):
+    teacher = Teacher.objects.get(user=request.user)  # Get the logged-in teacher
     selected_date = request.GET.get('date', datetime.today().strftime('%Y-%m-%d'))
+    
     if request.method == 'POST':
-        form = DutyPreferenceForm(request.POST)
+        form = DutyPreferenceForm(request.POST, user=teacher)
         if form.is_valid():
-            form.save()
+            preference = form.save(commit=False)
+            preference.teacher = teacher  # Assign the logged-in teacher
+            preference.save()
             return redirect('preference_list')
     else:
-        form = DutyPreferenceForm()
+        form = DutyPreferenceForm(user=teacher)  # Pass the teacher to the form
+
     return render(request, 'add_preference.html', {'form': form})
 
 @login_required()

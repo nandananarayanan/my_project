@@ -81,18 +81,29 @@
                 </div>
                 <div class="card-body">
                     {% if preferred_teachers %}
-                        <ul class="list-group">
-                            {% for teacher in preferred_teachers %}
-                                <li class="list-group-item">
-                                    {{ teacher.user.get_full_name }}  {# Access teacher's username correctly #}
-                                </li>
-                            {% endfor %}
-
-                        </ul>
+                        <table class="table table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">Sl. No</th>
+                                    <th class="text-center">Teacher Name</th>
+                                    <th class="text-center">No. of Duties</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in preferred_teachers %}
+                                    <tr>
+                                        <td class="text-center">{{ forloop.counter }}</td>
+                                        <td>{{ teacher.user.get_full_name }}</td>
+                                        <td class="text-center">{{ teacher.duty_counts }}</td> 
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     {% else %}
                         <p class="text-muted">No teachers have selected this date as preferred.</p>
                     {% endif %}
                 </div>
+                
             </div>
         </div>
     </div>

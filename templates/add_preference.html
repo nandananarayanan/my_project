@@ -29,9 +29,11 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="id_teacher" class="form-label">Teacher</label>
-                            {{ form.teacher }}
+                            <label class="form-label">Teacher</label>
+                            <input type="text" class="form-control" value="{{ request.user.get_full_name }}" disabled>
+                            {{ form.teacher.as_hidden }}  <!-- Keeps the field hidden but ensures data is submitted -->
                         </div>
+                        
                         <div class="mb-3">
                             <label for="id_pref_date" class="form-label">Preferred Date</label>
                             {{ form.pref_date }}
