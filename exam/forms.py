@@ -123,6 +123,8 @@ class ExamForm(forms.ModelForm):
             'month': 'Month',
         }
 
+from django.utils import timezone
+
 class TimetableForm(forms.ModelForm):
     SESSION_CHOICES = [
         ('Forenoon', 'Forenoon'),
@@ -139,6 +141,17 @@ class TimetableForm(forms.ModelForm):
             'course': forms.Select(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+    
+
+    def clean_date(self):
+        date = self.cleaned_data.get('date')
+
+        # Allow today or future dates, show a warning if the date is in the past
+        if date < timezone.now().date():
+            # Add a warning message for past dates
+            self.add_error('date', 'Warning: You have selected a past date. Please verify if it is valid.')
+
+        return date
 
 from django import forms
 from django.contrib.auth.models import User, Group
@@ -279,15 +292,16 @@ class DutyPreferenceForm(forms.ModelForm):
         model = DutyPreference
         fields = ['teacher', 'pref_date']
         widgets = {
-            'teacher': forms.Select(attrs={'class': 'form-control'}),
+            'teacher': forms.HiddenInput(),  # Hide the teacher field
         }
         labels = {
-            'teacher': 'Teacher',
             'pref_date': 'Preferred Date',
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Fetching unique examination dates from Timetable model
         exam_dates = Timetable.objects.values_list('date', flat=True).distinct()
         self.fields['pref_date'].choices = [(date, date) for date in exam_dates]
+
+        if user:
+            self.fields['teacher'].initial = user  # Set the logged-in teacher
