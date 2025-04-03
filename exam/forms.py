@@ -123,7 +123,9 @@ class ExamForm(forms.ModelForm):
             'month': 'Month',
         }
 
+from django import forms
 from django.utils import timezone
+from .models import Timetable, Course
 
 class TimetableForm(forms.ModelForm):
     SESSION_CHOICES = [
@@ -131,7 +133,10 @@ class TimetableForm(forms.ModelForm):
         ('Afternoon', 'Afternoon'),
     ]
 
-    session = forms.ChoiceField(choices=SESSION_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))  # ✅ Use Select widget
+    session = forms.ChoiceField(
+        choices=SESSION_CHOICES, 
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
 
     class Meta:
         model = Timetable
@@ -141,17 +146,22 @@ class TimetableForm(forms.ModelForm):
             'course': forms.Select(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
-    
+
+    def __init__(self, *args, **kwargs):
+        super(TimetableForm, self).__init__(*args, **kwargs)
+        
+        # Modify the display format of the course field
+        self.fields['course'].queryset = Course.objects.all()
+        self.fields['course'].label_from_instance = lambda obj: f"{obj.course_code} - {obj.course_title}"
 
     def clean_date(self):
         date = self.cleaned_data.get('date')
-
-        # Allow today or future dates, show a warning if the date is in the past
         if date < timezone.now().date():
-            # Add a warning message for past dates
-            self.add_error('date', 'Warning: You have selected a past date. Please verify if it is valid.')
-
+            raise forms.ValidationError("Error:Timetable cannot be scheduled for a past date. Please select a valid date.")
         return date
+
+
+
 
 from django import forms
 from django.contrib.auth.models import User, Group

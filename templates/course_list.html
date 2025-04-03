@@ -16,7 +16,12 @@
         <thead class="table-primary">
             <tr>
                 <th scope="col" style="text-align: center;">SI.No</th>
-                <th scope="col" style="text-align: center;">Course Code</th>
+                <th scope="col" style="text-align: center;">
+                    <a href="?order={% if order == 'asc' %}desc{% else %}asc{% endif %}" 
+                       class="text-dark text-decoration-none">
+                        Course Code {% if order == 'asc' %}↑{% elif order == 'desc' %}↓{% endif %}
+                    </a>
+                </th>
                 <th scope="col" style="text-align: center;">Course Title</th>
                 <th scope="col" style="text-align: center;">Department Name</th>
                 <th scope="col" style="text-align: center;">Exam Duration</th>

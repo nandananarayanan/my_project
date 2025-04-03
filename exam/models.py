@@ -65,7 +65,8 @@ class Timetable(models.Model):
     session = models.CharField(max_length=50, choices=SESSION_CHOICES)  # ✅ Add choices
 
     def __str__(self):
-        return f"{self.course.course_title} on {self.date}"
+        return f"{self.course.course_code} - {self.course.course_title} on {self.date}"
+
 
 # Room Model
 class Room(models.Model):
