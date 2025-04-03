@@ -164,17 +164,30 @@ def delete_room(request, pk):
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
 
+import re
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Course  # Ensure correct import
+
 @login_required()
 @user_passes_test(chief_group_required)
 def course_list(request):
     order = request.GET.get('order', 'asc')  # Default to ascending
-    order_field = 'course_code_int' if order == 'asc' else '-course_code_int'
 
-    courses = Course.objects.annotate(
-        course_code_int=Cast('course_code', IntegerField())
-    ).order_by(order_field)
+    # Extract numbers from course_code safely
+    def extract_number(course):
+        match = re.search(r'\d+', course.course_code)  # Extract first number
+        return int(match.group()) if match else float('inf')  # Use high value if no number
+
+    courses = list(Course.objects.all())  # Convert queryset to list for sorting
+
+    # Sort using extracted numbers
+    courses.sort(key=lambda c: extract_number(c), reverse=(order == 'desc'))
 
     return render(request, 'course_list.html', {'courses': courses, 'order': order})
+
 
 
 
