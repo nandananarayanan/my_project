@@ -161,11 +161,22 @@ def delete_room(request, pk):
         return redirect('room_list')
     return render(request, 'delete_room.html', {'room': room})
 
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
+
 @login_required()
 @user_passes_test(chief_group_required)
 def course_list(request):
-    courses = Course.objects.select_related('dept_id').all()
-    return render(request, 'course_list.html', {'courses': courses})
+    order = request.GET.get('order', 'asc')  # Default to ascending
+    order_field = 'course_code_int' if order == 'asc' else '-course_code_int'
+
+    courses = Course.objects.annotate(
+        course_code_int=Cast('course_code', IntegerField())
+    ).order_by(order_field)
+
+    return render(request, 'course_list.html', {'courses': courses, 'order': order})
+
+
 
 @login_required()
 @user_passes_test(chief_group_required)
