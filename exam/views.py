@@ -219,8 +219,9 @@ from django.urls import reverse
 @login_required()
 @user_passes_test(chief_group_required)
 def exam_list(request):
-    exam = Exam.objects.all()
+    exam = Exam.objects.all().order_by('-active', 'sem', 'year')
     return render(request, 'exam_list.html', {'exam': exam})
+
 
 @login_required()
 @user_passes_test(chief_group_required)
