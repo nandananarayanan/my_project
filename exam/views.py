@@ -327,13 +327,20 @@ def get_courses_by_exam(request):
     return JsonResponse({'error': 'No exam ID provided'}, status=400)
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.models import User
+from .models import Teacher
+from .forms import TeacherForm,TeacherEditForm  # Add TeacherEditForm separately (without password)
+
 @login_required()
 @user_passes_test(chief_group_required)
 def teacher_list(request):
     teachers = Teacher.objects.all()
     return render(request, 'teacher_list.html', {'teachers': teachers})
-
-from django.contrib import messages
 
 @login_required()
 @user_passes_test(chief_group_required)
@@ -344,33 +351,30 @@ def add_teacher(request):
             try:
                 form.save()
                 messages.success(request, "Teacher added successfully!")
-                return redirect('teacher_list')  # Redirect to the teacher list page
+                return redirect('teacher_list')
             except Exception as e:
                 messages.error(request, f"Error saving teacher: {e}")
-                print(f"Error saving teacher: {e}")  # Print the error to console for debugging
         else:
-            messages.error(request, "Form is invalid. Please check the entered data.")
-            print("Form Errors: ", form.errors)  # Print errors to the console for debugging
-    
+            messages.error(request, "Form is invalid.")
     else:
         form = TeacherForm()
     
     return render(request, 'add_teacher.html', {'form': form})
 
-
-
 @login_required()
 @user_passes_test(chief_group_required)
 def edit_teacher(request, pk):
     teacher = get_object_or_404(Teacher, pk=pk)
+    user = teacher.user
 
     if request.method == "POST":
-        form = TeacherForm(request.POST, instance=teacher.user)
+        form = TeacherEditForm(request.POST, instance=teacher)  # Only TeacherEditForm (no password)
         if form.is_valid():
             form.save()
-            return redirect('teacher_list')  # Change this if needed
+            messages.success(request, "Teacher updated successfully!")
+            return redirect('teacher_list')
     else:
-        form = TeacherForm(instance=teacher.user)
+        form = TeacherEditForm(instance=teacher)
 
     return render(request, 'add_teacher.html', {'form': form, 'edit_mode': True})
 
@@ -379,9 +383,40 @@ def edit_teacher(request, pk):
 def delete_teacher(request, pk):
     teacher = get_object_or_404(Teacher, pk=pk)
     if request.method == 'POST':
-        teacher.user.delete()  # Delete the related user as well
-        return redirect('teacher_list')  # Redirect to teacher list after deletion
+        teacher.user.delete()
+        return redirect('teacher_list')
     return render(request, 'delete_teacher.html', {'teacher': teacher})
+
+@login_required()
+@user_passes_test(chief_group_required)
+def change_teacher_password(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    if request.method == 'POST':
+        form = PasswordChangeForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Password updated successfully.')
+            return redirect('teacher_list')
+    else:
+        form = PasswordChangeForm(user)
+    return render(request, 'change_password.html', {'form': form, 'username': user.username})
+from django.contrib.auth.forms import SetPasswordForm
+
+@login_required()
+@user_passes_test(chief_group_required)
+def reset_teacher_password(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    if request.method == 'POST':
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Password reset successfully for {user.username}.')
+            return redirect('teacher_list')
+    else:
+        form = SetPasswordForm(user)
+    return render(request, 'reset_password.html', {'form': form, 'username': user.username})
+
 
 @login_required()
 @user_passes_test(chief_group_required)
@@ -523,20 +558,21 @@ def preference_list(request):
 @login_required()
 @user_passes_test(teacher_group_required)
 def add_preference(request):
-    teacher = Teacher.objects.get(user=request.user)  # Get the logged-in teacher
-    selected_date = request.GET.get('date', datetime.today().strftime('%Y-%m-%d'))
-    
+    teacher = Teacher.objects.get(user=request.user)
+
     if request.method == 'POST':
         form = DutyPreferenceForm(request.POST, user=teacher)
         if form.is_valid():
-            preference = form.save(commit=False)
-            preference.teacher = teacher  # Assign the logged-in teacher
-            preference.save()
+            selected_dates = form.cleaned_data['pref_dates']
+            for date in selected_dates:
+                DutyPreference.objects.create(teacher=teacher, pref_date=date)
+            messages.success(request, "Preferences saved successfully.")
             return redirect('preference_list')
     else:
-        form = DutyPreferenceForm(user=teacher)  # Pass the teacher to the form
+        form = DutyPreferenceForm(user=teacher)
 
     return render(request, 'add_preference.html', {'form': form})
+
 
 @login_required()
 @user_passes_test(teacher_group_required)

@@ -29,15 +29,19 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label class="form-label">Teacher</label>
-                            <input type="text" class="form-control" value="{{ request.user.get_full_name }}" disabled>
-                            {{ form.teacher.as_hidden }}  <!-- Keeps the field hidden but ensures data is submitted -->
+                            <label class="form-label">Select Preferred Dates</label>
+                            {% for checkbox in form.pref_dates %}
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                        {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            {% empty %}
+                                <p>No available exam dates.</p>
+                            {% endfor %}
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="id_pref_date" class="form-label">Preferred Date</label>
-                            {{ form.pref_date }}
-                        </div>
                         <div class="d-flex justify-content-end gap-2">
                             <button type="submit" class="btn btn-success">Save</button>
                             <a href="{% url 'preference_list' %}" class="btn btn-secondary">Cancel</a>

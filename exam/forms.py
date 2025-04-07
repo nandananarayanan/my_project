@@ -282,6 +282,85 @@ class TeacherForm(forms.ModelForm):
 
         return user  # ✅ Correctly placed inside the method
 
+class TeacherEditForm(forms.ModelForm):
+    first_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    phone_num = forms.CharField(
+        max_length=10,
+        required=True,
+        validators=[validate_phone],
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    designation = forms.ChoiceField(
+        choices=Teacher.DESIGNATION_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    gender = forms.ChoiceField(
+        choices=Teacher.GENDER_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    dept = forms.ModelChoiceField(
+        queryset=Department.objects.all(),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    role = forms.ChoiceField(
+        choices=[('Teacher', 'Teacher'), ('Examination Chief', 'Examination Chief')],
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Teacher
+        fields = ['phone_num', 'designation', 'gender', 'dept', 'role']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            user = self.instance.user
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial = user.last_name
+            self.fields['email'].initial = user.email
+
+    def save(self, commit=True):
+        teacher = super().save(commit=False)
+        user = teacher.user
+
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+        user.email = self.cleaned_data['email']
+
+        if commit:
+            user.save()
+            teacher.save()
+
+            role = self.cleaned_data['role']
+            if role == 'Examination Chief':
+                group = Group.objects.get(name='Examination Chief')
+                user.is_staff = True
+            else:
+                group = Group.objects.get(name='Teacher')
+                user.is_staff = False
+
+            user.groups.clear()
+            user.groups.add(group)
+            user.save()
+
+        return teacher
 
 
 class DutyAllotmentForm(forms.ModelForm):
@@ -304,27 +383,17 @@ class DutyAllotmentForm(forms.ModelForm):
         }
 
 
-
 from django import forms
-from .models import DutyPreference, Timetable
+from .models import Timetable
 
-class DutyPreferenceForm(forms.ModelForm):
-    pref_date = forms.ChoiceField(choices=[], label="Preferred Date", widget=forms.Select(attrs={'class': 'form-control'}))
-
-    class Meta:
-        model = DutyPreference
-        fields = ['teacher', 'pref_date']
-        widgets = {
-            'teacher': forms.HiddenInput(),  # Hide the teacher field
-        }
-        labels = {
-            'pref_date': 'Preferred Date',
-        }
+class DutyPreferenceForm(forms.Form):
+    pref_dates = forms.MultipleChoiceField(
+        choices=[],
+        widget=forms.CheckboxSelectMultiple,
+        label="Select Preferred Dates"
+    )
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         exam_dates = Timetable.objects.values_list('date', flat=True).distinct()
-        self.fields['pref_date'].choices = [(date, date) for date in exam_dates]
-
-        if user:
-            self.fields['teacher'].initial = user  # Set the logged-in teacher
+        self.fields['pref_dates'].choices = [(date, date) for date in exam_dates]
