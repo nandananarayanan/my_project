@@ -279,6 +279,8 @@ def timetable_list(request):
 @login_required()
 @user_passes_test(chief_group_required)
 def add_timetable(request):
+    ongoing_exams = Exam.objects.filter(active=True)  # Only active exams
+
     if request.method == 'POST':
         form = TimetableForm(request.POST)
         if form.is_valid():
@@ -286,12 +288,18 @@ def add_timetable(request):
             return redirect('timetable_list')
     else:
         form = TimetableForm()
+
+    # Apply filtered exams to the form's exam field
+    form.fields['exam'].queryset = ongoing_exams
+
     return render(request, 'add_timetable.html', {'form': form})
 
 @login_required()
 @user_passes_test(chief_group_required)
 def edit_timetable(request, pk):
-    timetable= get_object_or_404(Timetable, pk=pk)
+    timetable = get_object_or_404(Timetable, pk=pk)
+    ongoing_exams = Exam.objects.filter(active=True)
+
     if request.method == 'POST':
         form = TimetableForm(request.POST, instance=timetable)
         if form.is_valid():
@@ -299,7 +307,11 @@ def edit_timetable(request, pk):
             return redirect('timetable_list')
     else:
         form = TimetableForm(instance=timetable)
+
+    form.fields['exam'].queryset = ongoing_exams
+
     return render(request, 'add_timetable.html', {'form': form})
+
 
 @login_required()
 @user_passes_test(chief_group_required)

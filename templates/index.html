@@ -27,22 +27,25 @@
     }
 
 
-    /* General card styles for all cards */
-    .card {
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-        overflow: visible;
-        text-align: center;  /* Default: Center text */
-        border: 2px solid #1a73e8; 
-        background-color: white; 
-    }
+    .card,
     .cards {
         padding-bottom: 10px;
         margin-bottom: 15px;
         overflow: visible;
-        border: 2px solid #1a73e8; 
-        background-color: white; 
+        text-align: center;
+        border: 2px solid #1a73e8;
+        background-color: white;
+
+        transform: scale(0.95);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        border-radius: 12px;
     }
+
+    .card:hover,
+    .cards:hover {
+        transform: scale(1.05) translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
 
     /* General card-body styles */
     .card-body {
@@ -237,8 +240,8 @@
                             <h5 class="cards-title text-start">Duty Allotted Dates</h5>
                             <ul class="list-group text-start">
                                 {% if duty_allotted_dates %}
-                                    {% for date in duty_allotted_dates %}
-                                        <li class="list-group-item">{{ date }}</li>
+                                    {% for duty in duty_allotted_dates %}
+                                        <li class="list-group-item">{{ duty.date }} - Room {{ duty.room }}</li>
                                     {% endfor %}
                                 {% else %}
                                     <li class="list-group-item">No duty allotments</li>
@@ -247,6 +250,9 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
 
                 <!-- Preferred Dates Column -->
                 <div class="col-12 mt-4 duty-preference-card">

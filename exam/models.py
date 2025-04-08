@@ -1,5 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
+def ordinal(n):
+    try:
+        n = int(n)
+    except:
+        return n
+    if 10 <= n % 100 <= 20:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return f"{n}{suffix}"
+
 
 # Create your models here.
 class Department(models.Model):
@@ -50,7 +61,8 @@ class Exam(models.Model):
     month = models.CharField(max_length=50)
 
     def __str__(self):
-        return f" {self.sem}th Semester {self.level}  Examination {self.month} {self.year}"
+        return f"{ordinal(self.sem)} Semester {self.level} Examination {self.month} {self.year}"
+
 
 # Timetable Model
 class Timetable(models.Model):
@@ -80,7 +92,7 @@ class Room(models.Model):
         return self.room_no
 
 # Teacher Model
-from django.contrib.auth.models import User
+
 
 class Teacher(models.Model):
     DESIGNATION_CHOICES = [
