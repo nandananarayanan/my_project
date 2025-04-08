@@ -403,6 +403,24 @@ class DutyAllotmentForm(forms.ModelForm):
             'hours': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        teacher = cleaned_data.get('teacher')
+        date = cleaned_data.get('date')
+
+        if teacher and date:
+            # Check if a duty for the teacher already exists on this date.
+            # This check ignores the case when we update an existing record.
+            existing_duties = DutyAllotment.objects.filter(teacher=teacher, date=date)
+            
+            # If this is an update, make sure we don't count the instance itself.
+            if self.instance.pk:
+                existing_duties = existing_duties.exclude(pk=self.instance.pk)
+            
+            if existing_duties.exists():
+                raise forms.ValidationError("This teacher already has a duty assigned on this date.")
+        return cleaned_data
+
 
 
 from django import forms

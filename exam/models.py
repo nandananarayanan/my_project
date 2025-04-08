@@ -125,8 +125,7 @@ class DutyPreference(models.Model):
     def __str__(self):
         return f"Preference of {self.teacher.user.username} on {self.pref_date}"
 
-
-# Duty Allotment Model
+    
 class DutyAllotment(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="duties")
     date = models.DateField()
@@ -135,6 +134,12 @@ class DutyAllotment(models.Model):
 
     def __str__(self):
         return f"Duty of {self.teacher.user.username} in Room {self.room.room_no} on {self.date}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'date'], name='unique_teacher_duty_per_day')
+        ]
+
 
 
 
