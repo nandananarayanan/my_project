@@ -400,7 +400,10 @@ def change_teacher_password(request, user_id):
             return redirect('teacher_list')
     else:
         form = PasswordChangeForm(user)
-    return render(request, 'change_password.html', {'form': form, 'username': user.username})
+
+    full_name = f"{user.first_name} {user.last_name}"
+    return render(request, 'change_password.html', {'form': form, 'full_name': full_name})
+
 
 from django.contrib.auth.forms import SetPasswordForm
 
@@ -418,7 +421,9 @@ def reset_teacher_password(request, user_id):
     else:
         form = SetPasswordForm(user)
 
-    return render(request, 'reset_password.html', {'form': form, 'username': user.username})
+    full_name = f"{user.first_name} {user.last_name}"
+    return render(request, 'reset_password.html', {'form': form, 'full_name': full_name})
+
 
 @login_required()
 @user_passes_test(chief_group_required)
