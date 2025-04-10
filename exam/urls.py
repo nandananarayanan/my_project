@@ -63,4 +63,6 @@ urlpatterns = [
 
     path('duty-history/', views.duty_history, name='duty_history'),
     path('exam-attendance/', views.upload_nominal_roll, name='setup_nominal_roll'),
+    path('exam-attendance/delete/', views.delete_nominal_roll, name='delete_nominal_roll'),
+    path('exam-attendance/<str:date>/', views.mark_attendance, name='mark_attendance'),
 ]

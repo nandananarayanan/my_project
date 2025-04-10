@@ -634,16 +634,28 @@ def duty_history(request):
 
 @login_required()
 @user_passes_test(chief_group_required)
-
-
-
 def upload_nominal_roll(request):
-    if request.method == 'POST' and request.FILES['file']:
-        excel_file = request.FILES['file']
-        df = pd.read_excel(excel_file)
+    print("Upload view triggered")
+
+    if request.method == 'POST':
+        print("POST method confirmed")
+        print("FILES content:", request.FILES)
+
+        excel_file = request.FILES.get('file')
+        if not excel_file:
+            messages.error(request, "No file uploaded.")
+            print("❌ No file found in request.FILES")
+            return redirect('setup_nominal_roll')
 
         try:
+            df = pd.read_excel(excel_file)
+            print("✅ Excel file read successfully")
+            print("🧾 Columns found in Excel:", df.columns.tolist())
+
             for _, row in df.iterrows():
+                scribe_number = row.get('Scribe', '')
+                scribe_number = scribe_number if pd.notna(scribe_number) and str(scribe_number).strip() else None
+
                 exam_attendance, _ = ExamAttendance.objects.get_or_create(
                     date=row['Date'],
                     course_code=row['Course Code'],
@@ -652,8 +664,13 @@ def upload_nominal_roll(request):
 
                 student, _ = Student.objects.get_or_create(
                     register_number=row['Register Number'],
-                    scribe_number=row.get('Scribe Number', '')
+                    defaults={'scribe_number': scribe_number}
                 )
+
+                # Update scribe_number if different and not None
+                if student.scribe_number != scribe_number and scribe_number:
+                    student.scribe_number = scribe_number
+                    student.save()
 
                 StudentExam.objects.get_or_create(
                     exam_attendance=exam_attendance,
@@ -661,25 +678,82 @@ def upload_nominal_roll(request):
                 )
 
             messages.success(request, 'Nominal Roll uploaded successfully!')
+
         except Exception as e:
             messages.error(request, f'Error uploading file: {str(e)}')
+            print(f"❌ Error reading Excel: {e}")
 
         return redirect('setup_nominal_roll')
 
-    # summary to display on left
+    # GET request → show summary
+   # Show summary
     summary = {}
     for attendance in ExamAttendance.objects.all():
         student_exams = StudentExam.objects.filter(exam_attendance=attendance)
+
         total_students = student_exams.count()
-        scribe_students = student_exams.filter(student__scribe_number__isnull=False).exclude(student__scribe_number='').count()
-        total_duties = total_students  # or any logic you prefer
+        absent = student_exams.filter(is_absent=True).count()
+        present = total_students - absent
+        scribe_students = student_exams.filter(student__scribe_number__iexact='yes').count()
+
         summary[attendance.date] = {
             'total_students': total_students,
-            'scribe_students': scribe_students,
-            'total_duties': total_duties,
+            'present': present,
+            'absent': absent,
         }
+
+
 
     context = {
         'summary': summary,
     }
     return render(request, 'setup_nominal_roll.html', context)
+
+
+
+@login_required()
+@user_passes_test(chief_group_required)
+
+def delete_nominal_roll(request):
+    StudentExam.objects.all().delete()
+    ExamAttendance.objects.all().delete()
+    Student.objects.all().delete()
+
+    messages.success(request, "All nominal roll entries deleted.")
+    return redirect('setup_nominal_roll')
+
+# views.py
+@login_required
+@user_passes_test(chief_group_required)
+def mark_attendance(request, date):
+    exam_attendance = get_object_or_404(ExamAttendance, date=date)
+    student_exams = StudentExam.objects.filter(exam_attendance=exam_attendance)
+
+    if request.method == 'POST':
+        if 'clear' in request.POST:
+            for se in student_exams:
+                se.is_absent = False  # Mark all as present
+                se.save()
+            messages.success(request, "All attendance cleared. Everyone marked as present.")
+        else:
+            absent_ids = request.POST.getlist('absent')
+            for se in student_exams:
+                se.is_absent = str(se.student.register_number) in absent_ids
+                se.save()
+            messages.success(request, "Attendance successfully recorded.")
+        return redirect('mark_attendance', date=date)
+
+    total = student_exams.count()
+    absent = student_exams.filter(is_absent=True).count()
+    present = total - absent
+
+    context = {
+        'exam_attendance': exam_attendance,
+        'student_exams': student_exams,
+        'date': date,
+        'total': total,
+        'present': present,
+        'absent': absent,
+    }
+    return render(request, 'mark_attendance.html', context)
+

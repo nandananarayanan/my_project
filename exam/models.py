@@ -177,6 +177,7 @@ class Student(models.Model):
 class StudentExam(models.Model):
     exam_attendance = models.ForeignKey(ExamAttendance, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    is_absent= models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.student.register_number} - {self.exam_attendance.course_code}"

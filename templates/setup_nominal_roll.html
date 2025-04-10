@@ -1,68 +1,169 @@
-<!-- templates/setup_nominal_roll.html -->
-
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Dashboard{% endblock %}
-
+{% block title %}Setup Nominal Roll{% endblock %}
 
 {% block content %}
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Setup Nominal Roll</title>
-    <style>
-        .box {
-            border: 1px solid #ccc;
-            padding: 20px;
-            margin: 15px;
-            border-radius: 10px;
-            box-shadow: 2px 2px 10px #ddd;
-        }
-        .left, .right {
-            display: inline-block;
-            vertical-align: top;
-            width: 45%;
-        }
-        .btn {
-            padding: 6px 12px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="left box">
-        <h3>Exam Dates</h3>
-        <table border="1" cellpadding="8">
+<style>
+    .box {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin: 15px auto;
+        border-radius: 10px;
+        box-shadow: 2px 2px 10px #ddd;
+        width: 50%;
+    }
+    .btn {
+        padding: 6px 12px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        margin-top: 10px;
+        margin-right: 10px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+    .btn-red {
+        background-color: red;
+    }
+
+    /* Modal styling */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 50%;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    table {
+        width: 100%;
+        margin-top: 15px;
+    }
+
+    table, th, td {
+        border: 1px solid #aaa;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px;
+        text-align: center;
+    }
+</style>
+
+<div class="box">
+    <h3>Upload Nominal Roll</h3>
+    <form method="POST" action="{% url 'setup_nominal_roll' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="file" required>
+        <br>
+        <button class="btn" type="submit">Upload Nominal Roll</button>
+    </form>
+
+    {% if messages %}
+    <ul>
+        {% for message in messages %}
+            <li style="color: green; font-weight: bold;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <form method="POST" action="{% url 'delete_nominal_roll' %}">
+        {% csrf_token %}
+        <button class="btn btn-red" type="submit">Delete Nominal Roll</button>
+    </form>
+</div>
+
+<div class="box">
+    <h3>Attendance</h3>
+    <button class="btn" onclick="document.getElementById('attendanceModal').style.display='block'">Take Attendance</button>
+    <button class="btn" onclick="document.getElementById('summaryModal').style.display='block'">View Summary</button>
+</div>
+
+<!-- Modal: Select Exam Date -->
+<div id="attendanceModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('attendanceModal').style.display='none'">&times;</span>
+        <h3>Select Exam Date</h3>
+        <ul>
+            {% for date, data in summary.items %}
+                <li>
+                    <form method="get" action="{% url 'mark_attendance' date=date %}">
+                        <button class="btn" type="submit">{{ date }}</button>
+                    </form>
+                </li>
+            {% empty %}
+                <li>No exam dates available</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Modal: Attendance Summary -->
+<div id="summaryModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('summaryModal').style.display='none'">&times;</span>
+        <h3>Attendance Summary</h3>
+        <table>
             <tr>
-                <th>Exam Date</th>
-                <th>Total Students</th>
-                <th>Scribe Students</th>
-                <th>Total Duties</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Present</th>
+                <th>Absent</th>
             </tr>
             {% for date, data in summary.items %}
             <tr>
                 <td>{{ date }}</td>
                 <td>{{ data.total_students }}</td>
-                <td>{{ data.scribe_students }}</td>
-                <td>{{ data.total_duties }}</td>
+                <td>{{ data.present }}</td>
+                <td>{{ data.absent }}</td>
             </tr>
             {% endfor %}
         </table>
-    </div>
 
-    <div class="right box">
-        <h3>Setup Nominal Roll</h3>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="file" name="file" required>
-            <br>
-            <button class="btn" type="submit">Upload Nominal Roll</button>
-        </form>
     </div>
-</body>
-</html>
+</div>
+
+<script>
+    // Close modal if clicked outside
+    window.onclick = function(event) {
+        const attendanceModal = document.getElementById('attendanceModal');
+        const summaryModal = document.getElementById('summaryModal');
+        if (event.target == attendanceModal) {
+            attendanceModal.style.display = "none";
+        } else if (event.target == summaryModal) {
+            summaryModal.style.display = "none";
+        }
+    }
+
+    // Auto-open modal if ?open_modal=1 is in URL
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('open_modal') === '1') {
+            document.getElementById('attendanceModal').style.display = 'block';
+        }
+    }
+</script>
+
 {% endblock %}
