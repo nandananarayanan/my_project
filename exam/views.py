@@ -609,3 +609,60 @@ def duty_history(request):
         duty_records = []
 
     return render(request, 'duty_history.html', {'duty_records': duty_records})
+
+# views.py
+
+import pandas as pd
+from django.shortcuts import render, redirect
+from .models import ExamAttendance, Student, StudentExam
+from django.contrib import messages
+
+@login_required
+@user_passes_test(chief_group_required)
+
+def upload_nominal_roll(request):
+    if request.method == 'POST' and request.FILES['file']:
+        excel_file = request.FILES['file']
+        df = pd.read_excel(excel_file)
+
+        try:
+            for _, row in df.iterrows():
+                exam_attendance, _ = ExamAttendance.objects.get_or_create(
+                    date=row['Date'],
+                    course_code=row['Course Code'],
+                    course_title=row['Course Title']
+                )
+
+                student, _ = Student.objects.get_or_create(
+                    register_number=row['Register Number'],
+                    scribe_number=row.get('Scribe Number', '')
+                )
+
+                StudentExam.objects.get_or_create(
+                    exam_attendance=exam_attendance,
+                    student=student
+                )
+
+            messages.success(request, 'Nominal Roll uploaded successfully!')
+        except Exception as e:
+            messages.error(request, f'Error uploading file: {str(e)}')
+
+        return redirect('setup_nominal_roll')
+
+    # summary to display on left
+    summary = {}
+    for attendance in ExamAttendance.objects.all():
+        student_exams = StudentExam.objects.filter(exam_attendance=attendance)
+        total_students = student_exams.count()
+        scribe_students = student_exams.filter(student__scribe_number__isnull=False).exclude(student__scribe_number='').count()
+        total_duties = total_students  # or any logic you prefer
+        summary[attendance.date] = {
+            'total_students': total_students,
+            'scribe_students': scribe_students,
+            'total_duties': total_duties,
+        }
+
+    context = {
+        'summary': summary,
+    }
+    return render(request, 'setup_nominal_roll.html', context)
