@@ -63,5 +63,5 @@ urlpatterns = [
     path('preferences/delete/<int:pk>/', views.delete_preference, name='delete_preference'),
 
     path('duty-history/', views.duty_history, name='duty_history'),
-     path('exam-attendance/', views.upload_nominal_roll, name='setup_nominal_roll'),
+    path('exam-attendance/', views.upload_nominal_roll, name='setup_nominal_roll'),
 ]
