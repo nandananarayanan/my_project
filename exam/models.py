@@ -1,5 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
+def ordinal(n):
+    try:
+        n = int(n)
+    except:
+        return n
+    if 10 <= n % 100 <= 20:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return f"{n}{suffix}"
+
 
 # Create your models here.
 class Department(models.Model):
@@ -50,7 +61,8 @@ class Exam(models.Model):
     month = models.CharField(max_length=50)
 
     def __str__(self):
-        return f" {self.sem}th Semester {self.level}  Examination {self.month} {self.year}"
+        return f"{ordinal(self.sem)} Semester {self.level} Examination {self.month} {self.year}"
+
 
 # Timetable Model
 class Timetable(models.Model):
@@ -80,7 +92,7 @@ class Room(models.Model):
         return self.room_no
 
 # Teacher Model
-from django.contrib.auth.models import User
+
 
 class Teacher(models.Model):
     DESIGNATION_CHOICES = [
@@ -113,8 +125,7 @@ class DutyPreference(models.Model):
     def __str__(self):
         return f"Preference of {self.teacher.user.username} on {self.pref_date}"
 
-
-# Duty Allotment Model
+    
 class DutyAllotment(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="duties")
     date = models.DateField()
@@ -123,6 +134,12 @@ class DutyAllotment(models.Model):
 
     def __str__(self):
         return f"Duty of {self.teacher.user.username} in Room {self.room.room_no} on {self.date}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['teacher', 'date'], name='unique_teacher_duty_per_day')
+        ]
+
 
 
 
@@ -136,18 +153,19 @@ class Examination(models.Model):
     def __str__(self):
         return f"{self.course.course_title} on {self.date}"
 
-
 # models.py
 
 from django.db import models
-
 class ExamAttendance(models.Model):
     date = models.DateField()
     course_code = models.CharField(max_length=20)
-    course_title = models.CharField(max_length=100)
+    course_title = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ('date', 'course_code')
 
     def __str__(self):
-        return f"{self.course_code} - {self.date}"
+        return f"{self.date} - {self.course_code} - {self.course_title}"
 
 
 class Student(models.Model):
@@ -161,6 +179,7 @@ class Student(models.Model):
 class StudentExam(models.Model):
     exam_attendance = models.ForeignKey(ExamAttendance, on_delete=models.CASCADE)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    is_absent= models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.student.register_number} - {self.exam_attendance.course_code}"

@@ -362,6 +362,27 @@ class TeacherEditForm(forms.ModelForm):
 
         return teacher
 
+from django import forms
+
+class ChangePasswordForm(forms.Form):
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter new password'}),
+        label="New Password",
+        required=True
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm new password'}),
+        label="Confirm Password",
+        required=True
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("new_password")
+        password2 = cleaned_data.get("confirm_password")
+
+        if password1 != password2:
+            raise forms.ValidationError("Passwords do not match.")
 
 class DutyAllotmentForm(forms.ModelForm):
     teacher = forms.ModelChoiceField(
@@ -382,6 +403,25 @@ class DutyAllotmentForm(forms.ModelForm):
             'hours': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        teacher = cleaned_data.get('teacher')
+        date = cleaned_data.get('date')
+
+        if teacher and date:
+            # Check if a duty for the teacher already exists on this date.
+            # This check ignores the case when we update an existing record.
+            existing_duties = DutyAllotment.objects.filter(teacher=teacher, date=date)
+            
+            # If this is an update, make sure we don't count the instance itself.
+            if self.instance.pk:
+                existing_duties = existing_duties.exclude(pk=self.instance.pk)
+            
+            if existing_duties.exists():
+                raise forms.ValidationError("This teacher already has a duty assigned on this date.")
+        return cleaned_data
+
+
 
 from django import forms
 from .models import Timetable
@@ -397,3 +437,11 @@ class DutyPreferenceForm(forms.Form):
         super().__init__(*args, **kwargs)
         exam_dates = Timetable.objects.values_list('date', flat=True).distinct()
         self.fields['pref_dates'].choices = [(date, date) for date in exam_dates]
+
+
+from django import forms
+from django.utils import timezone
+
+class DateFilterForm(forms.Form):
+    from_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=False)
+    to_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=False)

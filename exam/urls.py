@@ -50,7 +50,6 @@ urlpatterns = [
     path('teacher/<int:user_id>/change-password/', views.change_teacher_password, name='change_teacher_password'),
     path('teacher/<int:user_id>/reset-password/', views.reset_teacher_password, name='reset_teacher_password'),
 
-    
     path('duty-allotment/', duty_allotment, name='duty_allotment'),
     path('duty_list/', views.duty_list, name='duty_list'),
     path('add-duty/', views.add_duty, name='add_duty'),
@@ -64,4 +63,12 @@ urlpatterns = [
 
     path('duty-history/', views.duty_history, name='duty_history'),
     path('exam-attendance/', views.upload_nominal_roll, name='setup_nominal_roll'),
+    path('exam-attendance/delete/', views.delete_nominal_roll, name='delete_nominal_roll'),
+    path('exam-attendance/<str:date>/<str:course_code>/', views.mark_attendance, name='mark_attendance'),
+
+    path('generate-excel/', views.generate_excel, name='generate_excel'),
+    path('get-exam-dates/', views.get_exam_dates, name='get_exam_dates'),
+
+     path('chief-duties/', views.chief_duty_history, name='chief_duty_history'),
+
 ]
