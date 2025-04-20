@@ -436,7 +436,10 @@ class DutyPreferenceForm(forms.Form):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         exam_dates = Timetable.objects.values_list('date', flat=True).distinct()
-        self.fields['pref_dates'].choices = [(date, date) for date in exam_dates]
+        self.fields['pref_dates'].choices = [
+            (str(date), date.strftime("%d-%m-%Y")) for date in exam_dates
+        ]
+
 
 
 from django import forms

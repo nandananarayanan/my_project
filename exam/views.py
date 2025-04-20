@@ -594,14 +594,29 @@ def add_preference(request):
 @login_required()
 @user_passes_test(teacher_group_required)
 def edit_preference(request, pk):
-    preference = get_object_or_404(DutyPreference, pk=pk)
+    teacher = Teacher.objects.get(user=request.user)
+
     if request.method == 'POST':
-        form = DutyPreferenceForm(request.POST, instance=preference)
+        form = DutyPreferenceForm(request.POST, user=teacher)
         if form.is_valid():
-            form.save()
+            # Clear existing preferences
+            DutyPreference.objects.filter(teacher=teacher).delete()
+
+            # Save new preferences
+            selected_dates = form.cleaned_data['pref_dates']
+            for date_str in selected_dates:
+                DutyPreference.objects.create(teacher=teacher, pref_date=date_str)
+            
+            messages.success(request, "Preferences updated successfully.")
             return redirect('preference_list')
+
     else:
-        form = DutyPreferenceForm(instance=preference)
+        # Fetch existing dates and convert to string to match form choices
+        existing_dates = DutyPreference.objects.filter(teacher=teacher).values_list('pref_date', flat=True)
+        existing_dates = [str(date) for date in existing_dates]  # convert to strings
+
+        form = DutyPreferenceForm(user=teacher, initial={'pref_dates': existing_dates})
+
     return render(request, 'add_preference.html', {'form': form})
 
 @login_required()
