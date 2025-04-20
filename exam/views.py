@@ -218,7 +218,7 @@ def edit_course(request, pk):
             return redirect('course_list')
     else:
         form = CourseForm(instance=course)
-    return render(request, 'edit_course.html', {'form': form, 'course': course})
+    return render(request, 'add_course.html', {'form': form, 'course': course})
 
 @login_required()
 @user_passes_test(chief_group_required)
@@ -534,6 +534,12 @@ def add_duty(request):
 @user_passes_test(chief_group_required)
 def edit_duty(request, pk):
     duty = get_object_or_404(DutyAllotment, pk=pk)
+    selected_date = duty.date
+    preferred_teachers = Teacher.objects.filter(duty_preferences__pref_date=selected_date).distinct()
+
+    for teacher in preferred_teachers:
+        teacher.duty_counts = DutyAllotment.objects.filter(teacher=teacher, date=selected_date).count()
+
     if request.method == 'POST':
         form = DutyAllotmentForm(request.POST, instance=duty)
         if form.is_valid():
@@ -541,7 +547,12 @@ def edit_duty(request, pk):
             return redirect('duty_list')
     else:
         form = DutyAllotmentForm(instance=duty)
-    return render(request, 'add_duty.html', {'form': form})
+
+    return render(request, 'add_duty.html', {
+        'form': form,
+        'selected_date': selected_date.strftime('%Y-%m-%d'),
+        'preferred_teachers': preferred_teachers,
+    })
 
 @login_required()
 @user_passes_test(chief_group_required)
