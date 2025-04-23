@@ -1059,8 +1059,8 @@ def create_seating_excel(date_of_exam, course_data_list):
 
 
     safe_date = date_of_exam.strftime("%Y-%m-%d")
-    file_name = f"Seating_Layout_{safe_date}.xlsx"
-    folder_path = os.path.join(settings.MEDIA_ROOT, 'seating_files')
+    file_name = f"Statement_{safe_date}.xlsx"
+    folder_path = os.path.join(settings.MEDIA_ROOT, 'statement_files')
     os.makedirs(folder_path, exist_ok=True)
     file_path = os.path.join(folder_path, file_name)
     wb.save(file_path)
@@ -1098,7 +1098,7 @@ def generate_excel(request):
     create_seating_excel(date_obj, course_data_list)
 
     safe_date = date_obj.strftime("%Y-%m-%d")
-    excel_path = os.path.join(settings.MEDIA_ROOT, 'seating_files', f"Seating_Layout_{safe_date}.xlsx")
+    excel_path = os.path.join(settings.MEDIA_ROOT, 'statement_files', f"Statement_{safe_date}.xlsx")
 
     try:
         convert_excel_to_pdf(excel_path)
@@ -1106,11 +1106,11 @@ def generate_excel(request):
         print(f"PDF conversion failed for {safe_date}: {e}")
         return JsonResponse({'error': 'PDF conversion failed'}, status=500)
 
-    pdf_url = os.path.join(settings.MEDIA_URL, 'seating_files', f"Seating_Layout_{safe_date}.pdf")
+    pdf_url = os.path.join(settings.MEDIA_URL, 'statement_files', f"Statement_{safe_date}.pdf")
     return JsonResponse({'pdf_url': pdf_url})
 
 def convert_excel_to_pdf(input_file):
-    folder_path = os.path.join(settings.MEDIA_ROOT, 'seating_files')
+    folder_path = os.path.join(settings.MEDIA_ROOT, 'statement_files')
     command = [
         "soffice", "--headless", "--convert-to", "pdf",
         "--outdir", folder_path, input_file
