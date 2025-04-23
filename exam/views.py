@@ -1055,7 +1055,7 @@ def create_seating_excel(date_of_exam, course_data_list):
     ))
         present_count = total_students - len(absentees)
 
-    setup_sheet(ws, course_code, course_title, absentees, course['date_of_exam'], present_count)
+        setup_sheet(ws, course_code, course_title, absentees, course['date_of_exam'], present_count)
 
 
     safe_date = date_of_exam.strftime("%Y-%m-%d")
