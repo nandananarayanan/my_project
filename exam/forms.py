@@ -219,16 +219,26 @@ class TeacherForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     username = forms.CharField(
-        max_length=30,
-        required=True,
-        label="Username",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Username'})
+    max_length=30,
+    required=True,
+    label="Username",
+    widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Enter Username',
+        'autocomplete': 'off'  # 🚫 Prevent browser autofill
+    })
     )
+
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter Password'}),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter Password',
+            'autocomplete': 'new-password'  # 🚫 Prevent browser autofill
+        }),
         label="Password",
         required=True
     )
+
 
     class Meta:
         model = User
@@ -426,6 +436,8 @@ class DutyAllotmentForm(forms.ModelForm):
 from django import forms
 from .models import Timetable
 
+from django.utils import timezone
+
 class DutyPreferenceForm(forms.Form):
     pref_dates = forms.MultipleChoiceField(
         choices=[],
@@ -435,11 +447,16 @@ class DutyPreferenceForm(forms.Form):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        exam_dates = Timetable.objects.values_list('date', flat=True).distinct()
-        self.fields['pref_dates'].choices = [
-            (str(date), date.strftime("%d-%m-%Y")) for date in exam_dates
-        ]
 
+        # Only use dates from timetables of active exams and future dates
+        exam_dates = Timetable.objects.filter(
+            exam__active=True,
+            date__gte=timezone.now().date()
+        ).values_list('date', flat=True).distinct()
+
+        self.fields['pref_dates'].choices = [
+            (str(date), date.strftime("%d-%m-%Y")) for date in sorted(exam_dates)
+        ]
 
 
 from django import forms

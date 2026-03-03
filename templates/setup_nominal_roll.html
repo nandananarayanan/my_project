@@ -231,13 +231,13 @@
         <button class="btn" type="submit"><i class="fas fa-upload"></i> Upload Nominal Roll</button>
     </form>
 
-    {% if messages %}
+    {% comment %} {% if messages %}
         <ul>
             {% for message in messages %}
                 <li style="color: green; font-weight: bold;"><i class="fas fa-check-circle"></i> {{ message }}</li>
             {% endfor %}
         </ul>
-    {% endif %}
+    {% endif %}  {% endcomment %}
 
     <form method="POST" action="{% url 'delete_nominal_roll' %}">
         {% csrf_token %}
